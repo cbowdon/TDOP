@@ -6,18 +6,16 @@ type Input = String
 type RuleName = String
 type Rules = [(RuleName, Regex)]
 
-matchRule :: Input -> Rules -> Maybe (RuleName, String)
-matchRule input = foldr matcher Nothing
+ruleMatch :: Input -> Rules -> Maybe (RuleName, String)
+ruleMatch input = foldr matcher Nothing
     where
-        matcher (name, regex) (Just (n1,r1)) =
+        matcher (n', regex) (Just (n, r)) =
             case matchRegex regex input of
-                Just [r2]   -> Just $ if length r1 >= length r2 then (n1,r1) else (name, r2)
-                Just (r2:_) -> Just $ if length r1 >= length r2 then (n1,r1) else (name, r2)
-                _           -> Nothing
-        matcher (name, regex) Nothing
+                Just [r']   -> Just $ if length r >= length r' then (n, r) else (n', r')
+                Just (r':_) -> Just $ if length r >= length r' then (n, r) else (n', r')
+                _           -> Just (n, r)
+        matcher (n, regex) Nothing
             = case matchRegex regex input of
-                Just [x]    -> Just (name, x)
-                Just (x:_)  -> Just (name, x)
+                Just [x]    -> Just (n, x)
+                Just (x:_)  -> Just (n, x)
                 _           -> Nothing
-
-
