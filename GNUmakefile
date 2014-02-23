@@ -1,10 +1,12 @@
+.PHONY:
+
 all:
 	cabal build
 
 run:
 	cabal run
 
-test:
+test: .PHONY
 	cabal test
 
 lint:
