@@ -6,3 +6,6 @@ run:
 
 test:
 	cabal test
+
+lint:
+	hlint *.hs
