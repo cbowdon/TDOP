@@ -50,6 +50,7 @@ test-suite test-hlex
     main-is:            test.hs
     build-depends:      base >=4.6 && <4.7
                         , regex-compat >= 0.95.1
+                        , mtl >= 2.1.2
                        --, quickcheck >= 2.6
                        --, hunit >= 1.2.5.2
 
@@ -66,6 +67,7 @@ executable hlex
   -- Other library packages from which modules are imported.
   build-depends:       base >=4.6 && <4.7
                        , regex-compat >= 0.95.1
+                       , mtl >= 2.1.2
 
   -- Directories containing source files.
   -- hs-source-dirs:

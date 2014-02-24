@@ -1,31 +1,45 @@
 module HLex where
 
 import Control.Monad
+import Control.Monad.Error
+import Control.Monad.Identity
 import Control.Monad.Reader
+import Control.Monad.State
+import Control.Monad.Writer
 import Text.Regex
 
 type Index = Int
 type Name = String
 type Rule = (Name, Regex)
 type Rules = [Rule]
-data Token =
-            Token Name String
+data Token = Token Name String
             | EndToken
             deriving (Show)
 
-hlex :: Rules -> String -> Either String [Token]
-hlex r s = hlex' r s 0 $ Right []
+type LexResult = Either String [Token]
 
-hlex' :: Rules -> String -> Index -> Either String [Token] -> Either String [Token]
-hlex' r _ _ error@(Left _) = error
-hlex' r [] _ (Right tokens) = Right . reverse $ EndToken:tokens
-hlex' r s i (Right tokens) =
-    case ruleMatch r s of
-        Nothing             -> Left $ "Lex error at char " ++ show i
-        Just (name, match)  ->  let i'    = length match
-                                    rem   = drop i' s
-                                    token = Token name match
-                                in hlex' r rem (i + i') $ Right $ token:tokens
+-- TODO
+-- type InputStream = (Index, String)
+-- StateT InputStream
+type HLex a = ReaderT Rules (StateT Index Identity) a
+
+hlex :: Rules -> String -> LexResult
+hlex r s = runIdentity $ evalStateT (runReaderT (hlex' s $ Right []) r) 0
+
+hlex' :: String -> LexResult -> HLex LexResult
+hlex' _ err@(Left _)  = return err
+hlex' [] (Right tokens) = return . Right . reverse $ EndToken:tokens
+hlex' s (Right tokens)  = do
+    rules <- ask
+    i <- get
+    case ruleMatch rules s of
+        Nothing             -> return . Left $ "Lex error at char " ++ show i
+        Just (name, match)  ->  do
+            let i'    = length match
+                rest  = drop i' s
+                token = Token name match
+            put (i + i')
+            hlex' rest $ Right $ token:tokens
 
 mkRule :: Name -> String -> Rule
 mkRule n s = (n, mkRegex $ "^(" ++ s ++ ")")
