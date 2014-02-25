@@ -1,11 +1,15 @@
-module HLex where
+module HLex
+( Token(..)
+, Rule
+, Rules
+, LexResult
+, hlex
+, mkRule
+) where
 
-import Control.Monad
-import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.State
-import Control.Monad.Writer
 import Text.Regex
 
 type Index = Int
@@ -18,9 +22,6 @@ data Token = Token Name String
 
 type LexResult = Either String [Token]
 
--- TODO
--- type InputStream = (Index, String)
--- StateT InputStream
 type HLex a = ReaderT Rules (StateT Index Identity) a
 
 hlex :: Rules -> String -> LexResult

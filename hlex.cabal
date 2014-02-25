@@ -51,6 +51,7 @@ test-suite test-hlex
     build-depends:      base >=4.6 && <4.7
                         , regex-compat >= 0.95.1
                         , mtl >= 2.1.2
+                        , containers >= 0.5.0.0
                        --, quickcheck >= 2.6
                        --, hunit >= 1.2.5.2
 
@@ -68,6 +69,7 @@ executable hlex
   build-depends:       base >=4.6 && <4.7
                        , regex-compat >= 0.95.1
                        , mtl >= 2.1.2
+                       , containers >= 0.5.0.0
 
   -- Directories containing source files.
   -- hs-source-dirs:

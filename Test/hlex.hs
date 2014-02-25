@@ -1,5 +1,6 @@
 module Test.HLex where
 
+-- TODO why does cabal think hunit/quickcheck not installed?
 import Text.Regex
 import HLex
 
