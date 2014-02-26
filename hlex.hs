@@ -12,20 +12,19 @@ import Control.Monad.State
 import Text.Regex
 
 type Index = Int
-type Name = String
-type Rule = (Name, Regex)
-data Token = Token Name String
-            | EndToken
-            deriving (Show)
+type Rule a = (a, Regex)
+data Token a =  Token a String
+                | EndToken
+                deriving (Show)
 
-type LexResult = Either String [Token]
+type LexResult a = Either String [Token a]
 
-type HLex a = ReaderT [Rule] (StateT Index Identity) a
+type HLex a b = ReaderT [Rule a] (StateT Index Identity) b
 
-hlex :: [Rule] -> String -> LexResult
+hlex :: [Rule a] -> String -> LexResult a
 hlex r s = runIdentity $ evalStateT (runReaderT (hlex' s $ Right []) r) 0
 
-hlex' :: String -> LexResult -> HLex LexResult
+hlex' :: String -> LexResult a -> HLex a (LexResult a)
 hlex' _ err@(Left _)  = return err
 hlex' [] (Right tokens) = return . Right . reverse $ EndToken:tokens
 hlex' s (Right tokens)  = do
@@ -40,10 +39,10 @@ hlex' s (Right tokens)  = do
             put (index + index')
             hlex' rest $ Right $ token:tokens
 
-mkRule :: Name -> String -> Rule
+mkRule :: a -> String -> Rule a
 mkRule n s = (n, mkRegex $ "^(" ++ s ++ ")")
 
-ruleMatch :: [Rule] -> String -> Maybe (Name, String)
+ruleMatch :: [Rule a] -> String -> Maybe (a, String)
 ruleMatch rules input = foldr matcher Nothing rules
     where
         matcher (n', regex) (Just (n, r)) =

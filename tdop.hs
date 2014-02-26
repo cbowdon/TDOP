@@ -18,16 +18,16 @@ data Value = IntVal Integer
 
 type Env = M.Map Name Value
 
-nud :: Token -> Maybe Expr
+nud :: Token Name -> Maybe Expr
 nud (Token "operator" "*") = Nothing
 
-led :: Token -> Maybe ([Token] -> Expr -> Expr)
+led :: Token Name -> Maybe ([Token Name] -> Expr -> Expr)
 led = undefined
 
-lbp :: Token -> BindingPrecedence
+lbp :: Token Name -> BindingPrecedence
 lbp = undefined
 
-expression :: [Token] -> BindingPrecedence -> Maybe Expr
+expression :: [Token Name] -> BindingPrecedence -> Maybe Expr
 expression (t0:t1:ts) rbp = do
     left <- nud t0
     if rbp >= lbp t1 then return left else do
