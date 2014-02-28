@@ -2,7 +2,6 @@ module TDOP where
 
 import Control.Monad.Identity
 import Control.Monad.State
-import Control.Monad.Writer
 import qualified Data.Map as M
 import HLex
 
@@ -37,6 +36,7 @@ findSymbol sm (Token n v) =
     case M.lookup n sm of
         Just f  -> Just (f v)
         _       -> Nothing
+findSymbol _ EndToken = Nothing
 
 data InputState = InputState
     { tokens :: [Token]
@@ -52,14 +52,14 @@ advance i0 = InputState
     , symbol = symbol' }
     where
         tokens' = case tokens i0 of
-                    (x:xs)  -> xs
+                    (_:xs)  -> xs
                     _       -> []
         token'      = case tokens i0 of
-                        (x:xs)  -> Just x
-                        _       -> Nothing
+                        (x:_) -> Just x
+                        _     -> Nothing
         symbol'     = token' >>= findSymbol (symbols i0)
 
-expression :: BindingPrecedence -> StateT InputState Maybe Expr
+expression :: BindingPrecedence -> StateT InputState Identity Expr
 expression rbp = do
     i0 <- get
     let s0 = symbol i0
