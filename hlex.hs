@@ -1,5 +1,6 @@
 module HLex
 ( Token(..)
+, Name
 , Rule
 , LexResult
 , hlex
@@ -12,19 +13,20 @@ import Control.Monad.State
 import Text.Regex
 
 type Index = Int
-type Rule a = (a, Regex)
-data Token a =  Token a String
-                | EndToken
-                deriving (Show)
+type Name = String
+type Rule = (Name, Regex)
+data Token =  Token Name String
+              | EndToken
+              deriving (Show)
 
-type LexResult a = Either String [Token a]
+type LexResult = Either String [Token]
 
-type HLex a b = ReaderT [Rule a] (StateT Index Identity) b
+type HLex a = ReaderT [Rule] (StateT Index Identity) a
 
-hlex :: [Rule a] -> String -> LexResult a
+hlex :: [Rule] -> String -> LexResult
 hlex r s = runIdentity $ evalStateT (runReaderT (hlex' s $ Right []) r) 0
 
-hlex' :: String -> LexResult a -> HLex a (LexResult a)
+hlex' :: String -> LexResult -> HLex LexResult
 hlex' _ err@(Left _)  = return err
 hlex' [] (Right tokens) = return . Right . reverse $ EndToken:tokens
 hlex' s (Right tokens)  = do
@@ -39,10 +41,10 @@ hlex' s (Right tokens)  = do
             put (index + index')
             hlex' rest $ Right $ token:tokens
 
-mkRule :: a -> String -> Rule a
+mkRule :: Name -> String -> Rule
 mkRule n s = (n, mkRegex $ "^(" ++ s ++ ")")
 
-ruleMatch :: [Rule a] -> String -> Maybe (a, String)
+ruleMatch :: [Rule] -> String -> Maybe (Name, String)
 ruleMatch rules input = foldr matcher Nothing rules
     where
         matcher (n', regex) (Just (n, r)) =

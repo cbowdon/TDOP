@@ -52,6 +52,7 @@ test-suite test-hlex
                         , regex-compat >= 0.95.1
                         , mtl >= 2.1.2
                         , containers >= 0.5.0.0
+                        , transformers >= 0.3.0.0
                        --, quickcheck >= 2.6
                        --, hunit >= 1.2.5.2
 
@@ -70,6 +71,7 @@ executable hlex
                        , regex-compat >= 0.95.1
                        , mtl >= 2.1.2
                        , containers >= 0.5.0.0
+                       , transformers >= 0.3.0.0
 
   -- Directories containing source files.
   -- hs-source-dirs:

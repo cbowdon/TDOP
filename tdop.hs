@@ -1,15 +1,16 @@
 module TDOP where
 
+import Control.Monad.Writer
 import qualified Data.Map as M
 import HLex
 
-type Name = String
 type BindingPrecedence = Integer
 
 data Expr = IntLit Integer
             | FloLit Float
             | Var Name
             | Op Expr Expr
+            | Null
             deriving Show
 
 data Value = IntVal Integer
@@ -18,31 +19,33 @@ data Value = IntVal Integer
 
 type Env = M.Map Name Value
 
-nud :: Token Name -> Maybe Expr
-nud (Token "operator" "*") = Nothing
+data Symbol = Symbol
+    { name :: Name
+    , lbp :: BindingPrecedence
+    , nud :: Maybe Expr
+    , led :: Maybe ([Token] -> Expr -> Expr) }
 
-led :: Token Name -> Maybe ([Token Name] -> Expr -> Expr)
-led = undefined
+instance Show Symbol where
+    show s = "Symbol " ++ name s
 
-lbp :: Token Name -> BindingPrecedence
-lbp = undefined
+type SymbolMap = M.Map Name (String -> Symbol)
 
-expression :: [Token Name] -> BindingPrecedence -> Maybe Expr
-expression (t0:t1:ts) rbp = do
-    left <- nud t0
-    if rbp >= lbp t1 then return left else do
-        right <- led t1
-        return $ right (t1:ts) left
-{-
-function expression(rbp) {
-    var left, t = token;
-    token = tokenizer.next();
-    left = t.nud();
-    while (rbp < token.lbp) {
-        t = token;
-        token = tokenizer.next();
-        left = t.led(left);
-    }
-    return left;
-}
--}
+symbol :: SymbolMap -> Token -> Maybe Symbol
+symbol sm (Token n v) =
+    case M.lookup n sm of
+        Just f  -> Just (f v)
+        _       -> Nothing
+
+expression :: SymbolMap -> [Token] -> BindingPrecedence -> WriterT String Maybe Expr
+expression sm (t0:t1:ts) rbp = do
+    tell $ "t0 = " ++ show t0 ++ ", t1 = " ++ show t1
+    s0 <- lift $ symbol sm t0
+    s1 <- lift $ symbol sm t1
+    left <- lift $ nud s0
+    tell $ "left = " ++ show left ++ ", rbp < lbp = " ++ show (rbp < lbp s1)
+    if rbp < lbp s1 then do
+        right <- lift $ led s1
+        let result = right (t1:ts) left
+        tell $ ", result == " ++ show result
+        return result
+    else return left
