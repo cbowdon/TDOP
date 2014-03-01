@@ -1,4 +1,12 @@
-module TDOP where
+module TDOP
+( Expr(..)
+, Symbol(..)
+, SymbolMap
+, readTokens
+, InputState(..)
+, inputState
+, expression
+) where
 
 import Control.Monad.Identity
 import Control.Monad.State
@@ -31,20 +39,24 @@ instance Show Symbol where
 
 type SymbolMap = M.Map Name (String -> Symbol)
 
+data InputState = InputState
+    { symbols :: [Symbol]
+    , symbol :: Symbol }
+    deriving Show
+
 findSymbol :: SymbolMap -> Token -> Either String Symbol
 findSymbol sm (Token n v) =
     case M.lookup n sm of
         Just f  -> return $ f v
         _       -> Left $ "Symbol not found: " ++ show n
 
+inputState :: [Symbol] -> InputState
+inputState s = InputState { symbols = drop 1 s, symbol = head s }
+
 readTokens :: SymbolMap -> [Token] -> Either String InputState
 readTokens sm t = do
     s <- mapM (findSymbol sm) t
-    return InputState { symbols = drop 1 s, symbol = head s }
-
-data InputState = InputState
-    { symbols :: [Symbol]
-    , symbol :: Symbol }
+    return $ inputState s
 
 advance :: StateT InputState Identity ()
 advance = do

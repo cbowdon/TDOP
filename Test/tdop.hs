@@ -1,9 +1,10 @@
 module Test.TDOP where
 
+import Control.Monad.Identity
+import Control.Monad.State
 import qualified Data.Map as M
 import HLex
 import TDOP
-import Test.HLex (rules, expr)
 
 tokens =    [ Token "float"         "0.99"
             , Token "operator"      "*"
@@ -12,45 +13,51 @@ tokens =    [ Token "float"         "0.99"
             , Token "identifier"    "offset"
             , Token "end"           "" ]
 
-nada _ _ = Null
-
 mkFloat n = Symbol
     { name = "Float " ++ show n
 	, lbp = 0
-	, nud = Just . FloLit . read $ n
-	, led = Just nada }
+	, nud = FloLit . read $ n
+	, led = const Null }
 mkInt n = Symbol
     { name = "Int " ++ show n
 	, lbp = 0
-	, nud = Just . IntLit . read $ n
-	, led = Just nada }
+	, nud = IntLit . read $ n
+	, led = const Null }
 mkNoOp n = Symbol
     { name = "NoOp " ++ show n
 	, lbp = 0
-	, nud = Just Null
-	, led = Just nada }
+	, nud = Null
+	, led = const Null }
 mkIdentifier n = Symbol
     { name = "Identifier " ++ show n
 	, lbp = 0
-	, nud = Just Null
-	, led = Just nada }
+	, nud = Null
+	, led = const Null }
 mkOperator "+" = Symbol
     { name = "Operator +"
 	, lbp = 50
-	, nud = Just Null
-	, led = Just nada }
+	, nud = Null
+	, led = const Null }
 mkOperator "*" = Symbol
     { name = "Operator *"
 	, lbp = 60
-	, nud = Just Null
-	, led = Just $ \(t0:ts) left -> left + expression symbols ts 60 }
+	, nud = Null
+	, led = const Null }
+mkEnd = const Symbol
+    { name = "End"
+    , lbp = 0
+    , nud = Null
+    , led = const Null }
 
-symbols :: SymbolMap
-symbols =   M.insert "operator" mkOperator .
+symbolMap :: SymbolMap
+symbolMap = M.insert "operator" mkOperator .
             M.insert "float" mkFloat .
-            M.insert "int" mkFloat .
+            M.insert "int" mkInt .
             M.insert "identifier" mkIdentifier .
             M.insert "whitespace" mkNoOp $
+            M.insert "end" mkEnd
             M.empty
 
-result = expression symbols tokens 0
+result = case readTokens symbolMap tokens of
+    Left error  -> undefined
+    Right st    -> runIdentity $ runStateT (expression 0) st
