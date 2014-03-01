@@ -31,51 +31,46 @@ instance Show Symbol where
 
 type SymbolMap = M.Map Name (String -> Symbol)
 
-findSymbol :: SymbolMap -> Token -> Maybe Symbol
+findSymbol :: SymbolMap -> Token -> Either String Symbol
 findSymbol sm (Token n v) =
     case M.lookup n sm of
-        Just f  -> Just (f v)
-        _       -> Nothing
-findSymbol _ EndToken = Nothing
+        Just f  -> return $ f v
+        _       -> Left $ "Symbol not found: " ++ show n
+
+readTokens :: SymbolMap -> [Token] -> Either String InputState
+readTokens sm t = do
+    s <- mapM (findSymbol sm) t
+    return InputState { symbols = drop 1 s, symbol = head s }
 
 data InputState = InputState
-    { tokens :: [Token]
-    , symbols :: SymbolMap
-    , token :: Maybe Token
-    , symbol :: Maybe Symbol }
+    { symbols :: [Symbol]
+    , symbol :: Symbol }
 
-advance :: InputState -> InputState
-advance i0 = InputState
-    { tokens = tokens'
-    , symbols = symbols i0
-    , token = token'
-    , symbol = symbol' }
+advance :: StateT InputState Identity ()
+advance = do
+    i0 <- get
+    put $ advance' i0
     where
-        tokens' = case tokens i0 of
-                    (_:xs)  -> xs
-                    _       -> []
-        token'      = case tokens i0 of
-                        (x:_) -> Just x
-                        _     -> Nothing
-        symbol'     = token' >>= findSymbol (symbols i0)
+        advance' i0 = InputState
+            { symbols = drop 1 . symbols $ i0
+            , symbol = head . symbols $ i0 }
 
 expression :: BindingPrecedence -> StateT InputState Identity Expr
 expression rbp = do
     i0 <- get
     let s0 = symbol i0
-    case s0 of
-        Nothing -> return Null
-        Just s  -> do
-            let left = nud s
-            put $ advance i0
-            i1 <- get
-            let s1 = symbol i1
-            case s1 of
-                Nothing -> return left
-                Just s' -> do
-                    let lbp' = lbp s'
-                    if rbp < lbp'
-                    then
-                        return . led s' $ left
-                    else
-                        return left
+    let left = nud s0
+    advance
+    expression' rbp left
+
+expression' :: BindingPrecedence -> Expr -> StateT InputState Identity Expr
+expression' rbp left = do
+    i <- get
+    let s = symbol i
+    if rbp < lbp s
+    then do
+        advance
+        let right = led s left
+        expression' rbp right
+    else
+        return left

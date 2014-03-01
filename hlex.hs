@@ -15,9 +15,10 @@ import Text.Regex
 type Index = Int
 type Name = String
 type Rule = (Name, Regex)
-data Token =  Token Name String
-              | EndToken
-              deriving (Show)
+data Token =  Token Name String deriving (Show)
+
+endToken :: Token
+endToken = Token "end" ""
 
 type LexResult = Either String [Token]
 
@@ -28,7 +29,7 @@ hlex r s = runIdentity $ evalStateT (runReaderT (hlex' s $ Right []) r) 0
 
 hlex' :: String -> LexResult -> HLex LexResult
 hlex' _ err@(Left _)  = return err
-hlex' [] (Right tokens) = return . Right . reverse $ EndToken:tokens
+hlex' [] (Right tokens) = return . Right . reverse $ endToken:tokens
 hlex' s (Right tokens)  = do
     rules <- ask
     index <- get

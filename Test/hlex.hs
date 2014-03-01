@@ -17,7 +17,7 @@ expected =  [ Token "float"         "0.99"
             , Token "int"           "100"
             , Token "operator"      "+"
             , Token "identifier"    "offset"
-            , EndToken ]
+            , Token "end"           "" ]
 
 result = hlex rules expr
 

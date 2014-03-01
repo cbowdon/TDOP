@@ -5,16 +5,12 @@ import HLex
 import TDOP
 import Test.HLex (rules, expr)
 
-{-
-tokens :: Either String [Token]
-tokens = hlex rules expr
--}
 tokens =    [ Token "float"         "0.99"
             , Token "operator"      "*"
             , Token "int"           "100"
             , Token "operator"      "+"
             , Token "identifier"    "offset"
-            , EndToken ]
+            , Token "end"           "" ]
 
 nada _ _ = Null
 
@@ -49,7 +45,7 @@ mkOperator "*" = Symbol
 	, nud = Just Null
 	, led = Just $ \(t0:ts) left -> left + expression symbols ts 60 }
 
-symbols :: M.Map Name (String -> Symbol)
+symbols :: SymbolMap
 symbols =   M.insert "operator" mkOperator .
             M.insert "float" mkFloat .
             M.insert "int" mkFloat .
@@ -57,5 +53,4 @@ symbols =   M.insert "operator" mkOperator .
             M.insert "whitespace" mkNoOp $
             M.empty
 
--- result :: Maybe Expr
 result = expression symbols tokens 0
