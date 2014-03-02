@@ -1,7 +1,7 @@
 module Main where
 
 import Test.HLex
--- import Test.TDOP -- weird compilation error
+import Test.TDOP
 
 main :: IO ()
 main = undefined
