@@ -13,36 +13,46 @@ tokens =    [ Token "float"         "0.99"
             , Token "identifier"    "offset"
             , Token "end"           "" ]
 
+mkOperator "+" = Symbol
+    { name = "Operator +"
+	, lbp = 50
+	, nud = return Null
+	, led = \left -> do
+        right <- expression 50
+        return $ Fun "+" left right }
+
+mkOperator "*" = Symbol
+    { name = "Operator *"
+	, lbp = 60
+	, nud = return Null
+	, led = \left -> do
+        right <- expression 60
+        return $ Fun "*" left right }
+
 mkFloat n = Symbol
     { name = "Float " ++ show n
 	, lbp = 0
 	, nud = return . FloLit . read $ n
 	, led = const . return $ Null }
+
 mkInt n = Symbol
     { name = "Int " ++ show n
 	, lbp = 0
 	, nud = return . IntLit . read $ n
 	, led = const . return $ Null }
+
 mkNoOp n = Symbol
     { name = "NoOp " ++ show n
 	, lbp = 0
 	, nud = return Null
 	, led = const . return $ Null }
+
 mkIdentifier n = Symbol
     { name = "Identifier " ++ show n
 	, lbp = 0
-	, nud = return Null
+	, nud = return $ Var n
 	, led = const . return $ Null }
-mkOperator "+" = Symbol
-    { name = "Operator +"
-	, lbp = 50
-	, nud = return Null
-	, led = const . return $ Null }
-mkOperator "*" = Symbol
-    { name = "Operator *"
-	, lbp = 60
-	, nud = return Null
-	, led = const . return $ Null }
+
 mkEnd = const Symbol
     { name = "End"
     , lbp = 0

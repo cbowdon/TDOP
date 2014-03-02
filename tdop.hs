@@ -11,22 +11,37 @@ module TDOP
 import Control.Monad.Identity
 import Control.Monad.State
 import qualified Data.Map as M
+import Data.Maybe
 import HLex
 
-type BindingPrecedence = Integer
-
+-- TODO make this a type variable, user-pluggable
 data Expr = IntLit Integer
             | FloLit Float
             | Var Name
-            | Op Expr Expr
-            | Null
-            deriving Show
+            | Fun Name Expr Expr
+            | Abs Name Expr
+            | App Expr Expr
+            | Null -- TODO delete this after implementing language
+            deriving (Show)
+
+type Env = M.Map Name Value
 
 data Value = IntVal Integer
             | FloVal Float
-            | FunVal Name Expr
+            | FunVal Env Name Expr
 
-type Env = M.Map Name Value
+-- Gratefully taken from: http://www.cs.virginia.edu/~wh5a/personal/Transformers.pdf
+eval ::  Env -> Expr -> Value
+eval _ (IntLit i)   = IntVal i
+eval _ (FloLit f)   = FloVal f
+eval env (Var n)    = fromJust (M.lookup n env) -- TODO
+eval env (Abs n e)  = FunVal env n e
+eval env (App x y)  = let   v0 = eval env x
+                            v1 = eval env y
+                      in case v0 of
+                          FunVal env' n body -> eval (M.insert n v1 env') body
+
+type BindingPrecedence = Integer
 
 data Symbol = Symbol
     { name :: Name
@@ -42,7 +57,7 @@ type SymbolMap = M.Map Name (String -> Symbol)
 data InputState = InputState
     { symbols :: [Symbol]
     , symbol :: Symbol }
-    deriving Show
+    deriving (Show)
 
 type TDOP = StateT InputState Identity
 
