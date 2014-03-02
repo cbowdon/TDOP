@@ -31,8 +31,8 @@ type Env = M.Map Name Value
 data Symbol = Symbol
     { name :: Name
     , lbp :: BindingPrecedence
-    , nud :: Expr
-    , led :: Expr -> Expr }
+    , nud :: TDOP Expr
+    , led :: Expr -> TDOP Expr }
 
 instance Show Symbol where
     show s = "Symbol " ++ name s
@@ -43,6 +43,8 @@ data InputState = InputState
     { symbols :: [Symbol]
     , symbol :: Symbol }
     deriving Show
+
+type TDOP = StateT InputState Identity
 
 findSymbol :: SymbolMap -> Token -> Either String Symbol
 findSymbol sm (Token n v) =
@@ -67,22 +69,22 @@ advance = do
             { symbols = drop 1 . symbols $ i0
             , symbol = head . symbols $ i0 }
 
-expression :: BindingPrecedence -> StateT InputState Identity Expr
+expression :: BindingPrecedence -> TDOP Expr
 expression rbp = do
     i0 <- get
     let s0 = symbol i0
-    let left = nud s0
+    left <- nud s0
     advance
     expression' rbp left
 
-expression' :: BindingPrecedence -> Expr -> StateT InputState Identity Expr
+expression' :: BindingPrecedence -> Expr -> TDOP Expr
 expression' rbp left = do
     i <- get
     let s = symbol i
     if rbp < lbp s
     then do
         advance
-        let right = led s left
+        right <- led s left
         expression' rbp right
     else
         return left

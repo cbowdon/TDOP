@@ -16,47 +16,46 @@ tokens =    [ Token "float"         "0.99"
 mkFloat n = Symbol
     { name = "Float " ++ show n
 	, lbp = 0
-	, nud = FloLit . read $ n
-	, led = const Null }
+	, nud = return . FloLit . read $ n
+	, led = const . return $ Null }
 mkInt n = Symbol
     { name = "Int " ++ show n
 	, lbp = 0
-	, nud = IntLit . read $ n
-	, led = const Null }
+	, nud = return . IntLit . read $ n
+	, led = const . return $ Null }
 mkNoOp n = Symbol
     { name = "NoOp " ++ show n
 	, lbp = 0
-	, nud = Null
-	, led = const Null }
+	, nud = return Null
+	, led = const . return $ Null }
 mkIdentifier n = Symbol
     { name = "Identifier " ++ show n
 	, lbp = 0
-	, nud = Null
-	, led = const Null }
+	, nud = return Null
+	, led = const . return $ Null }
 mkOperator "+" = Symbol
     { name = "Operator +"
 	, lbp = 50
-	, nud = Null
-	, led = const Null }
+	, nud = return Null
+	, led = const . return $ Null }
 mkOperator "*" = Symbol
     { name = "Operator *"
 	, lbp = 60
-	, nud = Null
-	, led = const Null }
+	, nud = return Null
+	, led = const . return $ Null }
 mkEnd = const Symbol
     { name = "End"
     , lbp = 0
-    , nud = Null
-    , led = const Null }
+    , nud = return Null
+    , led = const . return $ Null }
 
 symbolMap :: SymbolMap
-symbolMap = M.insert "operator" mkOperator .
-            M.insert "float" mkFloat .
-            M.insert "int" mkInt .
-            M.insert "identifier" mkIdentifier .
-            M.insert "whitespace" mkNoOp $
-            M.insert "end" mkEnd
-            M.empty
+symbolMap = M.fromList  [ ("operator", mkOperator)
+                        , ("float", mkFloat)
+                        , ("int", mkInt)
+                        , ("identifier", mkIdentifier)
+                        , ("whitespace", mkNoOp)
+                        , ("end", mkEnd) ]
 
 result = case readTokens symbolMap tokens of
     Left error  -> undefined
