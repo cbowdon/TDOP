@@ -20,6 +20,7 @@ type Env = M.Map Name Value
 data Value = IntVal Integer
             | FloVal Float
             | FunVal Env Name Expr
+            deriving (Show)
 
 -- Gratefully taken from: http://www.cs.virginia.edu/~wh5a/personal/Transformers.pdf
 eval ::  Env -> Expr -> Value
@@ -31,3 +32,7 @@ eval env (App x y)  = let   v0 = eval env x
                             v1 = eval env y
                       in case v0 of
                           FunVal env' n body -> eval (M.insert n v1 env') body
+
+testExpr = App (App (Var "+") (IntLit 2)) (FloLit 2.0)
+env = undefined
+result = eval env testExpr

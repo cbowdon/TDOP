@@ -4,6 +4,7 @@ This is a no-frills Haskell implementation of a Pratt parser, [as described by D
 
 ## Limitations/TODO
 - Handling scope. Crockford's builds a tree of scopes as it goes, so probably will have to add something to InputState. This will make it uglier.
+- Curried functions in the example AST, Expr. I think this should be possible using the App constructor.
 
 [0]: http://javascript.crockford.com/tdop/tdop.html
 [1]: http://eli.thegreenplace.net/2010/01/02/top-down-operator-precedence-parsing/
