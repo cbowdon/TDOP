@@ -10,7 +10,6 @@ module TDOP
 import Control.Monad.Identity
 import Control.Monad.State
 import qualified Data.Map as M
-import Data.Maybe
 import HLex
 
 type BindingPrecedence = Integer
@@ -18,8 +17,8 @@ type BindingPrecedence = Integer
 data Symbol a = Symbol
     { name :: Name
     , lbp :: BindingPrecedence
-    , nud :: (TDOP a) a
-    , led :: a -> (TDOP a) a }
+    , nud :: TDOP a
+    , led :: a -> TDOP a }
 
 instance Show (Symbol a) where
     show s = "Symbol " ++ name s
@@ -31,7 +30,7 @@ data InputState a = InputState
     , symbol :: Symbol a }
     deriving (Show)
 
-type TDOP a = StateT (InputState a) Identity
+type TDOP a = StateT (InputState a) Identity a
 
 findSymbol :: SymbolMap a -> Token -> Either String (Symbol a)
 findSymbol sm (Token n v) =
@@ -56,7 +55,7 @@ advance = do
             { symbols = drop 1 . symbols $ i0
             , symbol = head . symbols $ i0 }
 
-expression :: BindingPrecedence -> (TDOP a) a
+expression :: BindingPrecedence -> TDOP a
 expression rbp = do
     i0 <- get
     let s0 = symbol i0
@@ -64,7 +63,7 @@ expression rbp = do
     advance
     expression' rbp left
 
-expression' :: BindingPrecedence -> a -> (TDOP a) a
+expression' :: BindingPrecedence -> a -> TDOP a
 expression' rbp left = do
     i <- get
     let s = symbol i
