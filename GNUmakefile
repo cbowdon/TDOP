@@ -11,3 +11,6 @@ test: .PHONY
 
 lint:
 	hlint *.hs
+
+clean:
+	rm -rf dist/*

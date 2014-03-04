@@ -1,6 +1,5 @@
 module TDOP
-( Expr(..)
-, Symbol(..)
+( Symbol(..)
 , SymbolMap
 , readTokens
 , InputState(..)
@@ -14,68 +13,41 @@ import qualified Data.Map as M
 import Data.Maybe
 import HLex
 
--- TODO make this a type variable, user-pluggable
-data Expr = IntLit Integer
-            | FloLit Float
-            | Var Name
-            | Fun Name Expr Expr
-            | Abs Name Expr
-            | App Expr Expr
-            | Null -- TODO delete this after implementing language
-            deriving (Show)
-
-type Env = M.Map Name Value
-
-data Value = IntVal Integer
-            | FloVal Float
-            | FunVal Env Name Expr
-
--- Gratefully taken from: http://www.cs.virginia.edu/~wh5a/personal/Transformers.pdf
-eval ::  Env -> Expr -> Value
-eval _ (IntLit i)   = IntVal i
-eval _ (FloLit f)   = FloVal f
-eval env (Var n)    = fromJust (M.lookup n env) -- TODO
-eval env (Abs n e)  = FunVal env n e
-eval env (App x y)  = let   v0 = eval env x
-                            v1 = eval env y
-                      in case v0 of
-                          FunVal env' n body -> eval (M.insert n v1 env') body
-
 type BindingPrecedence = Integer
 
-data Symbol = Symbol
+data Symbol a = Symbol
     { name :: Name
     , lbp :: BindingPrecedence
-    , nud :: TDOP Expr
-    , led :: Expr -> TDOP Expr }
+    , nud :: (TDOP a) a
+    , led :: a -> (TDOP a) a }
 
-instance Show Symbol where
+instance Show (Symbol a) where
     show s = "Symbol " ++ name s
 
-type SymbolMap = M.Map Name (String -> Symbol)
+type SymbolMap a = M.Map Name (String -> Symbol a)
 
-data InputState = InputState
-    { symbols :: [Symbol]
-    , symbol :: Symbol }
+data InputState a = InputState
+    { symbols :: [Symbol a]
+    , symbol :: Symbol a }
     deriving (Show)
 
-type TDOP = StateT InputState Identity
+type TDOP a = StateT (InputState a) Identity
 
-findSymbol :: SymbolMap -> Token -> Either String Symbol
+findSymbol :: SymbolMap a -> Token -> Either String (Symbol a)
 findSymbol sm (Token n v) =
     case M.lookup n sm of
         Just f  -> return $ f v
         _       -> Left $ "Symbol not found: " ++ show n
 
-inputState :: [Symbol] -> InputState
+inputState :: [Symbol a] -> InputState a
 inputState s = InputState { symbols = drop 1 s, symbol = head s }
 
-readTokens :: SymbolMap -> [Token] -> Either String InputState
+readTokens :: SymbolMap a -> [Token] -> Either String (InputState a)
 readTokens sm t = do
     s <- mapM (findSymbol sm) t
     return $ inputState s
 
-advance :: StateT InputState Identity ()
+advance :: StateT (InputState a) Identity ()
 advance = do
     i0 <- get
     put $ advance' i0
@@ -84,7 +56,7 @@ advance = do
             { symbols = drop 1 . symbols $ i0
             , symbol = head . symbols $ i0 }
 
-expression :: BindingPrecedence -> TDOP Expr
+expression :: BindingPrecedence -> (TDOP a) a
 expression rbp = do
     i0 <- get
     let s0 = symbol i0
@@ -92,7 +64,7 @@ expression rbp = do
     advance
     expression' rbp left
 
-expression' :: BindingPrecedence -> Expr -> TDOP Expr
+expression' :: BindingPrecedence -> a -> (TDOP a) a
 expression' rbp left = do
     i <- get
     let s = symbol i
