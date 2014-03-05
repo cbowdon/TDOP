@@ -6,10 +6,10 @@ import Data.Maybe (fromJust)
 type Name = String
 
 -- TODO make this a type variable, user-pluggable
-data Expr = IntLit Integer
-            | FloLit Float
+data Expr = FloLit Float
             | Var Name
-            | Fun Name Expr Expr
+            | Plus Expr Expr
+            | Multiply Expr Expr
             | Abs Name Expr
             | App Expr Expr
             | Null -- TODO delete this after implementing language
@@ -17,15 +17,20 @@ data Expr = IntLit Integer
 
 type Env = M.Map Name Value
 
-data Value = IntVal Integer
-            | FloVal Float
+data Value = FloVal Float
             | FunVal Env Name Expr
             deriving (Show)
 
 -- Gratefully taken from: http://www.cs.virginia.edu/~wh5a/personal/Transformers.pdf
+-- TODO actually use the transformers
 eval ::  Env -> Expr -> Value
-eval _ (IntLit i)   = IntVal i
 eval _ (FloLit f)   = FloVal f
+eval env (Plus x y)     =   let FloVal x' = eval env x
+                                FloVal y' = eval env y
+                            in  FloVal $ x' + y'
+eval env (Multiply x y) =   let FloVal x' = eval env x
+                                FloVal y' = eval env y
+                            in  FloVal $ x' * y'
 eval env (Var n)    = fromJust (M.lookup n env) -- TODO
 eval env (Abs n e)  = FunVal env n e
 eval env (App x y)  = let   v0 = eval env x
@@ -33,6 +38,5 @@ eval env (App x y)  = let   v0 = eval env x
                       in case v0 of
                           FunVal env' n body -> eval (M.insert n v1 env') body
 
-testExpr = App (App (Var "+") (IntLit 2)) (FloLit 2.0)
-env = undefined
-result = eval env testExpr
+testExpr = FloLit 12 `Plus` App (Abs "x" (Var "x")) (FloLit 4 `Plus` FloLit 2)
+evalResult = eval M.empty testExpr

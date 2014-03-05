@@ -12,7 +12,7 @@ import Test.Expr
 tokens :: [Token]
 tokens =    [ Token "float"         "0.99"
             , Token "operator"      "*"
-            , Token "int"           "100"
+            , Token "float"           "100"
             , Token "operator"      "+"
             , Token "identifier"    "offset"
             , Token "end"           "" ]
@@ -24,7 +24,7 @@ mkOperator "+" = Symbol
 	, nud = return Null
 	, led = \left -> do
         right <- expression 50
-        return $ Fun "+" left right }
+        return $ Plus left right }
 
 mkOperator "*" = Symbol
     { name = "Operator *"
@@ -32,20 +32,13 @@ mkOperator "*" = Symbol
 	, nud = return Null
 	, led = \left -> do
         right <- expression 60
-        return $ Fun "*" left right }
+        return $ Multiply left right }
 
 mkFloat :: String -> Symbol Expr
 mkFloat n = Symbol
     { name = "Float " ++ show n
 	, lbp = 0
 	, nud = return . FloLit . read $ n
-	, led = const . return $ Null }
-
-mkInt :: String -> Symbol Expr
-mkInt n = Symbol
-    { name = "Int " ++ show n
-	, lbp = 0
-	, nud = return . IntLit . read $ n
 	, led = const . return $ Null }
 
 mkNoOp :: String -> Symbol Expr
@@ -72,7 +65,6 @@ mkEnd = const Symbol
 symbolMap :: SymbolMap Expr
 symbolMap = M.fromList  [ ("operator", mkOperator)
                         , ("float", mkFloat)
-                        , ("int", mkInt)
                         , ("identifier", mkIdentifier)
                         , ("whitespace", mkNoOp)
                         , ("end", mkEnd) ]
